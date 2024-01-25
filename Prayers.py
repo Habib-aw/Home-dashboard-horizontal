@@ -33,7 +33,7 @@ class Prayers:
             for i in range(1, 3):
                 for j in range(1, 6):
                     salahsSplit = self.prayers[i][j].split(":")
-                    if j == 1 or j==2 or (j == 3 and (salahsSplit[0] == "12" or salahsSplit[0] == "11")):
+                    if j == 1 or (j == 2 and (salahsSplit[0] == "12" or salahsSplit[0] == "11")):
                         self.prayerTimeObj[i-1][j-1] = datetime(year, month + 1, day + 1, int(salahsSplit[0]), int(salahsSplit[1]))
                     else:
                         self.prayerTimeObj[i-1][j-1] = datetime(year, month + 1, day + 1, int(salahsSplit[0]) + 12, int(salahsSplit[1]))
@@ -72,13 +72,13 @@ class Prayers:
             for j in range(width):
                 if (i > 0 and i < self.prayerLength) and j != 0:
                     self.prayerLabels[i - 1][j - 1] = Label(self.frame, text=self.prayers[i][j], background=prayerFrameBgColor,font=("Arial", prayerFontSize), foreground="white")
-                    self.prayerLabels[i - 1][j - 1].grid(row=i, column=j, ipadx=prayerLabelsPaddingX)
+                    self.prayerLabels[i - 1][j - 1].grid(row=i, column=j, ipadx=prayerLabelsPaddingX, sticky='NSWE')
                 else:
                     font =notPrayerFontSize
                     
                     notPrayer = Label(self.frame, text=self.prayers[i][j], background=prayerFrameBgColor,
                                       font=("Arial", font), foreground="white")
-                    notPrayer.grid(row=i, column=j, ipadx=otherPrayerLabelsPaddingX)
+                    notPrayer.grid(row=i, column=j, ipadx=otherPrayerLabelsPaddingX, sticky='NSWE')
         if self.prayers[1][1] != "":
             self.checkPrayerPassed()
 
@@ -88,8 +88,9 @@ class Prayers:
                 if (self.prayerTimeObj[0][i] < datetime.now()):
                     self.prayerLabels[0][i].config(background="green")
             for i in range(len(self.prayerTimeObj[1])):
-                if (self.prayerTimeObj[1][i] < datetime.now()):
+                if (self.prayerTimeObj[1][i] > datetime.now()):
                     self.prayerLabels[1][i].config(background="orange")
+                    break
             for i in range(len(self.prayerTimeObj[0])):
                 if i == len(self.prayerTimeObj[1])-1:
                     continue
@@ -101,12 +102,12 @@ class Prayers:
 
     def announceAdhaanAndSalah(self):
         if self.prayers[1][1] != "":
-            for i in range(len(self.prayerTimeObj)):
+            for i in range(len(self.prayerTimeObj[0])):
                 if (datetime.now() >= self.prayerTimeObj[0][i] and datetime.now() < (self.prayerTimeObj[0][i] + timedelta(minutes=1))) and not self.adhaanAnnounce:
                     self.adhaanAnnounce = True
                     self.startAnnounceIndex = i
                     self.checkPrayerPassed()
-                    if i == 1:
+                    if i == 0:
                         Thread(target=playNoise, args=("adhaan-new",)).start()
                     else:
                         Thread(target=playNoise, args=("adhaan-new-long",)).start()
@@ -116,6 +117,8 @@ class Prayers:
                     self.salahAnnounceIndex = i
                     Thread(target=playNoise,args=("salah",)).start()
                     break
+                if (datetime.now() >= self.prayerTimeObj[0][i] and datetime.now() < (self.prayerTimeObj[0][i] + timedelta(minutes=1))) or (datetime.now() >= self.prayerTimeObj[1][i] and datetime.now() < (self.prayerTimeObj[1][i] + timedelta(minutes=1))):
+                    self.checkPrayerPassed()
             if not (datetime.now() >= self.prayerTimeObj[0][self.startAnnounceIndex] and datetime.now() < (
                     self.prayerTimeObj[0][self.startAnnounceIndex] + timedelta(minutes=1))):
                 self.adhaanAnnounce = False
